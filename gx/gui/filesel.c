@@ -109,7 +109,7 @@ static gui_image bg_filesel[14] =
   {NULL,Bg_overlay_png,IMAGE_VISIBLE|IMAGE_REPEAT,0,0,640,480,255},
   {NULL,Banner_top_png,IMAGE_VISIBLE,0,0,640,108,255},
   {NULL,Banner_bottom_png,IMAGE_VISIBLE,0,380,640,100,255},
-  {NULL,Main_logo_png,IMAGE_VISIBLE,466,40,152,44,255},
+  {NULL,Main_logo_png,IMAGE_VISIBLE,466,34,152,56,255},
   {NULL,Frame_s1_png,IMAGE_VISIBLE,8,70,372,336,152},
   {NULL,Frame_s2_png,0,384,264,248,140,152},
   {NULL,Snap_empty_png,IMAGE_VISIBLE,424,148,160,112,255},
