@@ -41,4 +41,4 @@ Files: one ZIP for Windows x64 (`.dll`), Linux x64 and Linux ARM64 / ROCKNIX (`.
 
 ---
 
-Genesis Plus GX is © Charles MacDonald and Eke-Eke, libretro port © Daniel De Matteis. It may be used and shared for free, but not for commercial purposes; see [LICENSE.txt](https://github.com/VrepliroidV/Genesis-Plus-GX/blob/master/LICENSE.txt), which is also in each ZIP. The source code of this build is in the "Source code" files of this release.
+Genesis Plus GX is © Charles MacDonald and Eke-Eke, libretro port © Daniel De Matteis. It may be used and shared for free, but not for commercial purposes; see [LICENSE.txt](https://github.com/VrepliroidV/GenesisPlusGX-ULTIMATE/blob/main/LICENSE.txt), which is also in each ZIP. The source code of this build is in the "Source code" files of this release.
