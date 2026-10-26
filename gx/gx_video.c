@@ -373,7 +373,7 @@ static int sharp_tex_w = 0, sharp_tex_h = 0; /* texture size, multiples of 4 */
 static int sharp_tex_ready = 0;
 
 /*** Bezels (gx/utils/bezel.h) ***
-  A PNG from /genplus/bezels covers the screen in the interlaced and
+  A PNG from /genplusultimate/bezels covers the screen in the interlaced and
   progressive modes (not in the original 240p ones). The game fills its
   transparent window and the bezel is drawn over it; a PNG without a window
   is a background, with the game in front of it at its usual size. The VI

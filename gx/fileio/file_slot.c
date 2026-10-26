@@ -58,7 +58,7 @@ static u8 SysArea[CARD_WORKAREA] ATTRIBUTE_ALIGN (32);
 
 /* Mega CD backup RAM stuff */
 static u32 brm_crc[2];
-static char brm_filename[3][32] = {CD_BRAM_JP, CD_BRAM_EU, CD_BRAM_US};
+static char brm_filename[3][64] = {CD_BRAM_JP, CD_BRAM_EU, CD_BRAM_US};
 static u8 brm_format[0x40] =
 {
   0x5f,0x5f,0x5f,0x5f,0x5f,0x5f,0x5f,0x5f,0x5f,0x5f,0x5f,0x00,0x00,0x00,0x00,0x40,

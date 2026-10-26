@@ -40,7 +40,7 @@
 #include "config.h"
 #include "fileio.h"
 
-#define DEFAULT_PATH  "/genplus"
+#define DEFAULT_PATH  "/genplusultimate"
 
 /*************************************************/
 /* required by Genesis Plus GX core              */
@@ -58,10 +58,10 @@
 #define SK_ROM        config.sys_rom[10]
 #define SK_UPMEM      config.sys_rom[11]
 
-#define CD_BRAM_US    "/genplus/saves/cd/scd_U.brm"
-#define CD_BRAM_EU    "/genplus/saves/cd/scd_E.brm"
-#define CD_BRAM_JP    "/genplus/saves/cd/scd_J.brm"
-#define CART_BRAM     "/genplus/saves/cd/cart.brm"
+#define CD_BRAM_US    DEFAULT_PATH "/saves/cd/scd_U.brm"
+#define CD_BRAM_EU    DEFAULT_PATH "/saves/cd/scd_E.brm"
+#define CD_BRAM_JP    DEFAULT_PATH "/saves/cd/scd_J.brm"
+#define CART_BRAM     DEFAULT_PATH "/saves/cd/cart.brm"
 
 /*********************************************************/
 /* implemented by Genesis Plus GX core (GC/Wii specific) */
@@ -77,7 +77,7 @@
 
 /*************************************************/
 
-#define VERSION "Genesis Plus GX 1.7.5"
+#define VERSION "Genesis Plus GX ULTIMATE 1.0.0" /* based on Genesis Plus GX 1.7.5 */
 
 #define VIDEO_WAIT    0x01
 #define AUDIO_WAIT    0x02

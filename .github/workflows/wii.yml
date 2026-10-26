@@ -1,4 +1,4 @@
-name: Genesis Plus GX Wii Build
+name: Genesis Plus GX ULTIMATE Wii Build
 
 on:
   push:
@@ -47,17 +47,18 @@ jobs:
 
     - name: Package for the Homebrew Channel
       run: |
-        mkdir -p dist/apps/genplus
-        cp genplus_wii.dol dist/apps/genplus/boot.dol
-        cp gx/hbc/meta.xml gx/hbc/icon.png LICENSE.txt dist/apps/genplus/
+        mkdir -p dist/apps/genplusultimate dist/genplusultimate/roms dist/genplusultimate/bezels
+        touch dist/genplusultimate/roms/romsdir dist/genplusultimate/bezels/bezelsdir
+        cp genplus_wii.dol dist/apps/genplusultimate/boot.dol
+        cp gx/hbc/meta.xml gx/hbc/icon.png LICENSE.txt dist/apps/genplusultimate/
 
     - name: Upload Wii build
       uses: actions/upload-artifact@v4
       with:
-        name: GenesisPlusGX-Wii
+        name: GenesisPlusGXUltimate-Wii
         path: dist/
 
-  # Publishing a release on GitHub (for example tag v1.7.5-usb.2) builds it and
+  # Publishing a release on GitHub (for example tag v1.0.0) builds it and
   # attaches the build as a .zip file. If the release text is empty, it is
   # filled from .github/RELEASE_NOTES.md.
   release:
@@ -72,7 +73,7 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: GenesisPlusGX-Wii
+        name: GenesisPlusGXUltimate-Wii
         path: artifacts
 
     - name: Zip and publish
@@ -81,8 +82,8 @@ jobs:
         GH_REPO: ${{ github.repository }}
         TAG: ${{ github.event.release.tag_name }}
       run: |
-        (cd artifacts && zip -r -X "$GITHUB_WORKSPACE/GenesisPlusGX-Wii.zip" .)
+        (cd artifacts && zip -r -X "$GITHUB_WORKSPACE/GenesisPlusGXUltimate-Wii.zip" .)
         if [ -z "$(gh release view "$TAG" --json body --jq .body)" ]; then
           gh release edit "$TAG" --notes-file .github/RELEASE_NOTES.md
         fi
-        gh release upload "$TAG" GenesisPlusGX-Wii.zip --clobber
+        gh release upload "$TAG" GenesisPlusGXUltimate-Wii.zip --clobber
