@@ -1,4 +1,9 @@
-**Genesis Plus GX ULTIMATE 1.1.1**: emulador de Mega Drive / Genesis, Mega CD, Master System, Game Gear e SG-1000 para Wii, baseado no [Genesis Plus GX 1.7.5](https://github.com/ekeeke/Genesis-Plus-GX) (Eke-Eke). *English below.*
+**Genesis Plus GX ULTIMATE 1.1.2**: emulador de Mega Drive / Genesis, Mega CD, Master System, Game Gear e SG-1000 para Wii, baseado no [Genesis Plus GX 1.7.5](https://github.com/ekeeke/Genesis-Plus-GX) (Eke-Eke). *English below.*
+
+## Novidades da 1.1.2
+
+- Logo: o **ULTIMATE** desceu um pouco, e o contorno do PLUS GX não fica mais por cima dele (no menu, no alto das outras telas e no ícone do Homebrew Channel).
+- O driver dos controles USB anota quais controles usam os gatilhos como botões (como o Retroflag). Os botões no Genesis continuam iguais.
 
 ## Novidades da 1.1.1
 
@@ -63,7 +68,9 @@ Em outros controles, os gatilhos e o botão de ombro esquerdo dão C, o ombro di
 
 ## English
 
-**Genesis Plus GX ULTIMATE 1.1.1**: Mega Drive / Genesis, Mega CD, Master System, Game Gear and SG-1000 emulator for Wii, based on Genesis Plus GX 1.7.5 (Eke-Eke).
+**Genesis Plus GX ULTIMATE 1.1.2**: Mega Drive / Genesis, Mega CD, Master System, Game Gear and SG-1000 emulator for Wii, based on Genesis Plus GX 1.7.5 (Eke-Eke).
+
+New in 1.1.2: in the logo, ULTIMATE is a little lower, so the outline of PLUS GX no longer covers it.
 
 New in 1.1.1: the menu music and its player are in the menu before a game is loaded only (the in-game menu is silent; the Load Game menu plays the music again, from the beginning); the music folder is looked for on the SD card and on the USB drive (not only on the device the emulator starts from); the music is read into memory before it plays (files up to 16 MB); the help line of Menu Music says how many files were found.
 

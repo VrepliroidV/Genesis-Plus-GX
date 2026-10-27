@@ -77,7 +77,7 @@
 
 /*************************************************/
 
-#define VERSION "Genesis Plus GX ULTIMATE 1.1.1" /* based on Genesis Plus GX 1.7.5 */
+#define VERSION "Genesis Plus GX ULTIMATE 1.1.2" /* based on Genesis Plus GX 1.7.5 */
 
 #define VIDEO_WAIT    0x01
 #define AUDIO_WAIT    0x02
