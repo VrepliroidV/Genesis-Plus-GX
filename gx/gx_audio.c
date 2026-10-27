@@ -54,13 +54,21 @@ static u8 soundbuffer[SOUND_BUFFER_NUM][SOUND_BUFFER_LEN] ATTRIBUTE_ALIGN(32);
 static int bufferIndex;
 static int bufferSize;
 
-/* Background music: an OGG file of the music folder (config.menu_music),
-   read when the menu opens the first time */
+/* Background music: the OGG files of the music folder, chosen by
+   config.menu_music when the menu opens the first time, then by the mini
+   player of the menu. The file playing is read into memory and looped. */
 #define MENU_MUSIC_FOLDER   DEFAULT_PATH "/music"
 #define MENU_MUSIC_MAX_SIZE (8 * 1024 * 1024)
 static u8 *Bg_music_ogg = NULL;
 static u32 Bg_music_ogg_size = 0;
-static int Bg_music_loaded = 0;
+static int Bg_music_loaded = 0;          /* the setting was applied once */
+static char (*music_names)[BEZEL_NAME_MAX] = NULL;
+static int music_count = 0;
+static int music_current = -1;           /* the file of music_names chosen */
+static int music_read_index = -1;        /* the file in Bg_music_ogg */
+static int music_state = MUSIC_STOPPED;
+static int music_active = 0;             /* the OGG player plays Bg_music_ogg */
+static s32 music_resume = 0;             /* where to start again (ms) after a game ran */
 
 /* Frame Sync */
 u32 audioSync;
@@ -94,55 +102,53 @@ int gx_audio_MusicList(char (*names)[BEZEL_NAME_MAX], int max)
   return bezel_list_ext(MENU_MUSIC_FOLDER, ".ogg", names, 0, max);
 }
 
-static void music_free(void)
+static void music_stop_player(void)
 {
-  if (Bg_music_ogg)
+  if (music_active)
   {
-    /* the player reads the buffer */
     PauseOgg(1);
     StopOgg();
+    music_active = 0;
+  }
+}
+
+static void music_scan(void)
+{
+  if (!music_names)
+  {
+    music_names = malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
+  }
+  music_count = music_names ? gx_audio_MusicList(music_names, MAX_MENU_MUSIC) : 0;
+  music_current = -1;
+  music_read_index = -1; /* the indexes may have changed */
+}
+
+/* Reads music_names[music_current] (the player is stopped) */
+static int music_read(void)
+{
+  char fname[MAXPATHLEN];
+
+  if ((music_current < 0) || (music_current >= music_count))
+  {
+    return 0;
+  }
+  if (Bg_music_ogg && (music_read_index == music_current))
+  {
+    return 1;
+  }
+  if (Bg_music_ogg)
+  {
     free(Bg_music_ogg);
     Bg_music_ogg = NULL;
     Bg_music_ogg_size = 0;
   }
-}
+  music_read_index = -1;
 
-/* Reads the music of the setting (one by chance for MENU_MUSIC_RANDOM) */
-static void music_load(void)
-{
-  char name[BEZEL_NAME_MAX];
-  char fname[MAXPATHLEN];
-
-  music_free();
-  Bg_music_loaded = 1;
-  if (!config.menu_music[0])
-  {
-    return;
-  }
-  if (!strcmp(config.menu_music, MENU_MUSIC_RANDOM))
-  {
-    char (*names)[BEZEL_NAME_MAX] = malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
-    int count = names ? gx_audio_MusicList(names, MAX_MENU_MUSIC) : 0;
-    if (count > 0)
-    {
-      snprintf(name, sizeof(name), "%s", names[(u32)(gettime() % count)]);
-    }
-    free(names);
-    if (count == 0)
-    {
-      return;
-    }
-  }
-  else
-  {
-    snprintf(name, sizeof(name), "%s", config.menu_music);
-  }
-
-  snprintf(fname, sizeof(fname), "%s/%s", MENU_MUSIC_FOLDER, name);
+  snprintf(fname, sizeof(fname), "%s/%s", MENU_MUSIC_FOLDER, music_names[music_current]);
   FILE *f = fopen(fname, "rb");
   if (!f)
   {
-    return;
+    return 0;
   }
   fseek(f, 0, SEEK_END);
   long size = ftell(f);
@@ -155,6 +161,7 @@ static void music_load(void)
       if (fread(Bg_music_ogg, 1, size, f) == (size_t)size)
       {
         Bg_music_ogg_size = size;
+        music_read_index = music_current;
       }
       else
       {
@@ -164,22 +171,150 @@ static void music_load(void)
     }
   }
   fclose(f);
+  return Bg_music_ogg != NULL;
 }
 
-static void music_play(void)
+static void music_start(s32 at)
 {
-  if (Bg_music_ogg && !Shutdown)
+  music_stop_player();
+  if (Shutdown || !music_read())
   {
-    PauseOgg(0);
-    PlayOgg((char *)Bg_music_ogg, Bg_music_ogg_size, 0, OGG_INFINITE_TIME);
-    SetVolumeOgg(((int)config.bgm_volume * MAX_VOLUME) / 100);
+    music_state = MUSIC_STOPPED;
+    return;
+  }
+  PauseOgg(0);
+  PlayOgg((char *)Bg_music_ogg, Bg_music_ogg_size, at, OGG_INFINITE_TIME);
+  SetVolumeOgg(((int)config.bgm_volume * MAX_VOLUME) / 100);
+  music_active = 1;
+  music_state = MUSIC_PLAYING;
+}
+
+/* The file of the setting: none, one by chance or the one named */
+static void music_pick(void)
+{
+  int i;
+  music_current = -1;
+  if (!config.menu_music[0] || !music_count)
+  {
+    return;
+  }
+  if (!strcmp(config.menu_music, MENU_MUSIC_RANDOM))
+  {
+    music_current = (int)(gettime() % music_count);
+    return;
+  }
+  for (i = 0; i < music_count; i++)
+  {
+    if (!strcasecmp(music_names[i], config.menu_music))
+    {
+      music_current = i;
+      return;
+    }
+  }
+}
+
+static void music_apply_setting(void)
+{
+  music_stop_player();
+  music_scan();
+  music_pick();
+  music_resume = 0;
+  Bg_music_loaded = 1;
+  if (music_current >= 0)
+  {
+    music_start(0);
+  }
+  else
+  {
+    music_state = MUSIC_STOPPED;
   }
 }
 
 void gx_audio_MusicRestart(void)
 {
-  music_load();
-  music_play();
+  music_apply_setting();
+}
+
+void gx_audio_MusicPlay(void)
+{
+  if (!music_count)
+  {
+    return;
+  }
+  if ((music_state == MUSIC_PAUSED) && music_active)
+  {
+    PauseOgg(0);
+    music_state = MUSIC_PLAYING;
+  }
+  else if ((music_state != MUSIC_PLAYING) || !music_active)
+  {
+    if (music_current < 0)
+    {
+      music_current = 0;
+    }
+    music_start(music_resume); /* 0 unless paused while a game ran */
+  }
+}
+
+void gx_audio_MusicPause(void)
+{
+  if (music_state == MUSIC_PLAYING)
+  {
+    if (music_active)
+    {
+      PauseOgg(1);
+      s32 at = GetTimeOgg();
+      music_resume = (at > 0) ? at : 0;
+    }
+    music_state = MUSIC_PAUSED;
+  }
+}
+
+void gx_audio_MusicStop(void)
+{
+  music_stop_player();
+  music_resume = 0;
+  music_state = MUSIC_STOPPED;
+}
+
+void gx_audio_MusicSkip(int dir)
+{
+  if (!music_count)
+  {
+    return;
+  }
+  if (music_current < 0)
+  {
+    music_current = (dir > 0) ? 0 : (music_count - 1);
+  }
+  else
+  {
+    music_current = (music_current + dir + music_count) % music_count;
+  }
+  music_resume = 0;
+  music_start(0);
+}
+
+int gx_audio_MusicCount(void)
+{
+  return music_count;
+}
+
+int gx_audio_MusicState(void)
+{
+  return music_state;
+}
+
+void gx_audio_MusicName(char *out, int len)
+{
+  if ((music_current >= 0) && (music_current < music_count))
+  {
+    bezel_display_name_ext(music_names[music_current], ".ogg", out, len);
+  }
+  else
+  {
+    out[0] = 0;
+  }
 }
 
 /* AUDIO engine shutdown */
@@ -187,11 +322,13 @@ void gx_audio_Shutdown(void)
 {
   PauseOgg(1);
   StopOgg();
+  music_active = 0;
   ASND_Pause(1);
   ASND_End();
   if (Bg_music_ogg)
   {
     free(Bg_music_ogg);
+    Bg_music_ogg = NULL;
   }
 }
 
@@ -262,9 +399,15 @@ int gx_audio_Update(int status)
  ***/
 void gx_audio_Start(void)
 {
-  /* shutdown background music */
+  /* shutdown background music (its position is kept for the menu) */
+  if (music_active)
+  {
+    s32 at = GetTimeOgg();
+    music_resume = (at > 0) ? at : 0;
+  }
   PauseOgg(1);	
   StopOgg();	
+  music_active = 0;
   
   /* shutdown menu audio processing */
   ASND_Pause(1);
@@ -299,10 +442,14 @@ void gx_audio_Stop(void)
   ASND_Init();
   ASND_Pause(0);
 	
-  /* play background music (read the first time, once the settings are loaded) */
+  /* background music: the one of the setting the first time (once the
+     settings are loaded), then it goes on where it was if it was playing */
   if (!Bg_music_loaded)
   {
-    music_load();
+    music_apply_setting();
   }
-  music_play();
+  else if (music_state == MUSIC_PLAYING)
+  {
+    music_start(music_resume);
+  }
 }

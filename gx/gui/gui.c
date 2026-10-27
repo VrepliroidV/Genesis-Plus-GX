@@ -176,6 +176,141 @@ void GUI_DeleteMenu(gui_menu *menu)
 extern void gxSnapshot(void);
 
 /* Draw Menu */
+/*****************************************************************************/
+/*  Mini music player: top right of every menu, above the logo and the       */
+/*  title, used with the Wii remote pointer                                  */
+/*****************************************************************************/
+#define PLAYER_BTN    20
+#define PLAYER_GAP    5
+#define PLAYER_BAR_W  200
+#define PLAYER_RIGHT  618  /* right edge of the logo */
+#define PLAYER_Y      10   /* the logo starts at 34, the menu title text at 34 */
+
+static const u8 *player_png[5][2] =
+{
+  {Player_prev_png,  Player_prev_over_png},
+  {Player_play_png,  Player_play_over_png},
+  {Player_pause_png, Player_pause_over_png},
+  {Player_stop_png,  Player_stop_over_png},
+  {Player_next_png,  Player_next_over_png}
+};
+static gx_texture *player_tex[5][2];
+static gx_texture *player_bar = NULL;
+static int player_ready = 0;
+static int player_live = 0; /* a menu read the keys since the last drawing */
+
+static int player_x(int i)
+{
+  return PLAYER_RIGHT - (5 * PLAYER_BTN + 4 * PLAYER_GAP + 8 + PLAYER_BAR_W) + i * (PLAYER_BTN + PLAYER_GAP);
+}
+
+static int player_hit(int x, int y)
+{
+  int i;
+  if ((y < PLAYER_Y) || (y >= (PLAYER_Y + PLAYER_BTN)))
+  {
+    return -1;
+  }
+  for (i = 0; i < 5; i++)
+  {
+    if ((x >= player_x(i)) && (x < (player_x(i) + PLAYER_BTN)))
+    {
+      return i;
+    }
+  }
+  return -1;
+}
+
+static void player_draw(void)
+{
+  int i, j, x, over = -1;
+  char name[48];
+  GXColor text_color = WHITE;
+  GXColor grey = {0xbe,0xbe,0xbe,0xff};
+
+  if (!gx_audio_MusicCount())
+  {
+    player_live = 0;
+    return; /* no music in the folder */
+  }
+
+  if (!player_ready)
+  {
+    for (i = 0; i < 5; i++)
+    {
+      for (j = 0; j < 2; j++)
+      {
+        player_tex[i][j] = gxTextureOpenPNG(player_png[i][j], 0);
+      }
+    }
+    player_bar = gxTextureOpenPNG(Overlay_bar_png, 0);
+    player_ready = 1;
+  }
+
+#ifdef HW_RVL
+  if (player_live && m_input.ir.valid)
+  {
+    over = player_hit(m_input.ir.x, m_input.ir.y);
+  }
+#endif
+  player_live = 0;
+
+  for (i = 0; i < 5; i++)
+  {
+    if (player_tex[i][i == over])
+    {
+      gxDrawTexture(player_tex[i][i == over], player_x(i), PLAYER_Y, PLAYER_BTN, PLAYER_BTN, 255);
+    }
+  }
+
+  x = player_x(5) - PLAYER_GAP + 8;
+  if (player_bar)
+  {
+    gxDrawTexture(player_bar, x, PLAYER_Y, PLAYER_BAR_W, PLAYER_BTN, 255);
+  }
+  gx_audio_MusicName(name, 28);
+  if (!name[0])
+  {
+    strcpy(name, "No Music");
+  }
+  if (gx_audio_MusicState() != MUSIC_PLAYING)
+  {
+    text_color = grey; /* paused or stopped */
+  }
+  FONT_writeCenter(name, 14, x + 6, x + PLAYER_BAR_W - 6, PLAYER_Y + 15, text_color);
+}
+
+void GUI_PlayerInput(u16 *keys)
+{
+  player_live = 1;
+#ifdef HW_RVL
+  if (!(*keys & PAD_BUTTON_A) || !m_input.ir.valid || !gx_audio_MusicCount())
+  {
+    return;
+  }
+  int i = player_hit(m_input.ir.x, m_input.ir.y);
+  if (i < 0)
+  {
+    return;
+  }
+
+  ASND_SetVoice(ASND_GetFirstUnusedVoice(),VOICE_MONO_16BIT,22050,0,(u8 *)button_select_pcm,button_select_pcm_size,
+                ((int)config.sfx_volume * MAX_VOLUME) / 100,((int)config.sfx_volume * MAX_VOLUME) / 100,NULL);
+  switch (i)
+  {
+    case 0: gx_audio_MusicSkip(-1); break;
+    case 1: gx_audio_MusicPlay(); break;
+    case 2: gx_audio_MusicPause(); break;
+    case 3: gx_audio_MusicStop(); break;
+    case 4: gx_audio_MusicSkip(1); break;
+  }
+
+  /* the click was for the player only */
+  *keys &= ~PAD_BUTTON_A;
+  m_input.keys &= ~PAD_BUTTON_A;
+#endif
+}
+
 void GUI_DrawMenu(gui_menu *menu)
 {
   int i;
@@ -297,6 +432,9 @@ void GUI_DrawMenu(gui_menu *menu)
       FONT_alignRight(item->comment,16,item->x-6,item->y+(item->h-16)/2+16,(GXColor)WHITE);
     }
   }
+
+  /* mini music player */
+  player_draw();
 
   if (menu->cb)
     menu->cb();
@@ -543,6 +681,9 @@ void GUI_DrawMenuFX(gui_menu *menu, u8 speed, u8 out)
       }
     }
 
+    /* mini music player */
+    player_draw();
+
     if (menu->cb)
       menu->cb();
 
@@ -720,6 +861,7 @@ int GUI_UpdateMenu(gui_menu *menu)
 
   /* update menu */
   p = m_input.keys;
+  GUI_PlayerInput(&p);
 
   if (selected < max_buttons)
   {

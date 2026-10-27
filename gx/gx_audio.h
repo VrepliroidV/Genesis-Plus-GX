@@ -50,7 +50,17 @@ extern int gx_audio_Update(int status);
 
 /* Menu music (config.menu_music): the OGG files of /genplusultimate/music */
 #define MAX_MENU_MUSIC 512
+enum { MUSIC_STOPPED, MUSIC_PLAYING, MUSIC_PAUSED };
 extern int gx_audio_MusicList(char (*names)[128], int max); /* names of BEZEL_NAME_MAX */
-extern void gx_audio_MusicRestart(void); /* loads the one of the setting and plays it */
+extern void gx_audio_MusicRestart(void); /* the setting changed: plays its music from the start */
+
+/* the mini player of the menu */
+extern void gx_audio_MusicPlay(void);
+extern void gx_audio_MusicPause(void);
+extern void gx_audio_MusicStop(void);
+extern void gx_audio_MusicSkip(int dir); /* next (1) or previous (-1) file of the folder */
+extern int gx_audio_MusicCount(void);    /* files in the music folder (known once the menu opened) */
+extern int gx_audio_MusicState(void);
+extern void gx_audio_MusicName(char *out, int len); /* the file without ".ogg", "" for none */
 
 #endif

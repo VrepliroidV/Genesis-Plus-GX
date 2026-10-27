@@ -616,6 +616,7 @@ int FileSelector(int type)
     gxSetScreen();
 
     p = m_input.keys;
+    GUI_PlayerInput(&p);
 
     /* highlight next item */
     if (p & PAD_BUTTON_DOWN)

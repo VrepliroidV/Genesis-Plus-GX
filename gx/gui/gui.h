@@ -159,6 +159,10 @@ typedef struct
 
 extern gui_input m_input;
 
+/* Mini music player of the menus: a menu loop gives it the keys it read
+   (it uses A over its buttons and takes it out of them) */
+extern void GUI_PlayerInput(u16 *keys);
+
 /* Optionbox callback */
 typedef void (*optioncallback)(void);
 
@@ -198,6 +202,18 @@ extern gx_texture *w_pointer;
 #include "Button_arrow_over_png.h"
 #include "Button_digit_png.h"
 #include "Button_digit_over_png.h"
+
+/* Mini music player */
+#include "Player_prev_png.h"
+#include "Player_prev_over_png.h"
+#include "Player_play_png.h"
+#include "Player_play_over_png.h"
+#include "Player_pause_png.h"
+#include "Player_pause_over_png.h"
+#include "Player_stop_png.h"
+#include "Player_stop_over_png.h"
+#include "Player_next_png.h"
+#include "Player_next_over_png.h"
 
 /* Generic images*/
 #ifdef HW_RVL
