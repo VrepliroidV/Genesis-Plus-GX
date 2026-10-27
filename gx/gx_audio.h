@@ -53,6 +53,10 @@ extern int gx_audio_Update(int status);
 enum { MUSIC_STOPPED, MUSIC_PLAYING, MUSIC_PAUSED };
 extern int gx_audio_MusicList(char (*names)[128], int max); /* names of BEZEL_NAME_MAX */
 extern void gx_audio_MusicRestart(void); /* the setting changed: plays its music from the start */
+/* The music plays in the menu before a game is loaded, not in the in-game
+   menu; the Load Game menu plays it again, from the beginning. */
+extern void gx_audio_MusicEnable(int on);
+extern int gx_audio_MusicEnabled(void);  /* the music and its player are shown */
 
 /* the mini player of the menu */
 extern void gx_audio_MusicPlay(void);

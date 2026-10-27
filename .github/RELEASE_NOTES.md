@@ -2,6 +2,7 @@
 
 ## Novidades da 1.1.1
 
+- A música e o mini player ficam só no menu antes de carregar um jogo. Com um jogo carregado, o menu (Mode + direita, ou Home) fica em silêncio. Ao abrir **Load Game** para escolher outro jogo, a música volta a tocar do início, e para de novo se você voltar ao menu do jogo.
 - A pasta de músicas é procurada no SD **e** no pendrive (antes, só no aparelho de onde o emulador abria: com o app no pendrive e as músicas no SD, nada tocava e o player não aparecia).
 - A música é lida para a memória antes de tocar (arquivos de até 16 MB, uns 13 minutos em 160 kbps), como no Snes9x GX ULTIMATE.
 - Em Options > Menu, a linha de ajuda de **Menu Music** diz quantas músicas o emulador achou na pasta.
@@ -11,7 +12,7 @@
 - **Pasta de músicas**: coloque arquivos `.ogg` em `genplusultimate/music`, no SD ou no pendrive. Quantas músicas quiser, com qualquer nome, de até 16 MB cada.
 - **Options > Menu > Menu Music** (logo abaixo de BGM Volume, desça a lista): **OFF**, **RANDOM** (sorteia uma música da pasta cada vez que o emulador abre, o padrão) ou cada música da pasta pelo nome. Ao trocar, a música nova já começa a tocar.
 - **Mini player** no alto da tela, à direita, acima da logo: voltar, play, pause, stop, avançar e o nome da música. Ele funciona com o ponteiro do Wiimote e só aparece quando a pasta tem músicas. Voltar e avançar passam pelas músicas da pasta em ordem.
-- Ao voltar para o menu durante o jogo, a música continua de onde estava (antes ela recomeçava), a não ser que você tenha pausado ou parado. O nome fica cinza com a música pausada ou parada.
+- O nome fica cinza com a música pausada ou parada.
 - O `genplusultimate/Bg_music.ogg` não é mais usado: coloque a música na pasta `music`.
 
 ## O que já vinha na 1.0.0
@@ -64,12 +65,12 @@ Em outros controles, os gatilhos e o botão de ombro esquerdo dão C, o ombro di
 
 **Genesis Plus GX ULTIMATE 1.1.1**: Mega Drive / Genesis, Mega CD, Master System, Game Gear and SG-1000 emulator for Wii, based on Genesis Plus GX 1.7.5 (Eke-Eke).
 
-New in 1.1.1: the music folder is looked for on the SD card and on the USB drive (not only on the device the emulator starts from); the music is read into memory before it plays (files up to 16 MB); the help line of Menu Music says how many files were found.
+New in 1.1.1: the menu music and its player are in the menu before a game is loaded only (the in-game menu is silent; the Load Game menu plays the music again, from the beginning); the music folder is looked for on the SD card and on the USB drive (not only on the device the emulator starts from); the music is read into memory before it plays (files up to 16 MB); the help line of Menu Music says how many files were found.
 
 Menu music (1.1.0):
 - OGG files in `genplusultimate/music` (SD card or USB drive), any number, up to 16 MB each.
 - Options > Menu > Menu Music: OFF, RANDOM (one file of the folder at every start, the default) or one of the files; changing it plays the music at once.
-- A mini player at the top right of the menus, above the logo: previous, play, pause, stop, next and the name of the music. It is used with the Wii remote pointer and is shown when the folder has music. Back in the menu during a game, the music goes on where it was.
+- A mini player at the top right of the menus, above the logo: previous, play, pause, stop, next and the name of the music. It is used with the Wii remote pointer and is shown when the folder has music.
 - `genplusultimate/Bg_music.ogg` is not played any more: put the music in the music folder.
 
 Already in 1.0.0:

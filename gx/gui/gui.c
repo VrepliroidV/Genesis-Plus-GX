@@ -228,10 +228,10 @@ static void player_draw(void)
   GXColor text_color = WHITE;
   GXColor grey = {0xbe,0xbe,0xbe,0xff};
 
-  if (!gx_audio_MusicCount())
+  if (!gx_audio_MusicCount() || !gx_audio_MusicEnabled())
   {
     player_live = 0;
-    return; /* no music in the folder */
+    return; /* no music in the folder, or the in-game menu */
   }
 
   if (!player_ready)
@@ -284,7 +284,7 @@ void GUI_PlayerInput(u16 *keys)
 {
   player_live = 1;
 #ifdef HW_RVL
-  if (!(*keys & PAD_BUTTON_A) || !m_input.ir.valid || !gx_audio_MusicCount())
+  if (!(*keys & PAD_BUTTON_A) || !m_input.ir.valid || !gx_audio_MusicCount() || !gx_audio_MusicEnabled())
   {
     return;
   }

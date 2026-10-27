@@ -56,7 +56,9 @@ static int bufferSize;
 
 /* Background music: the OGG files of the music folder, chosen by
    config.menu_music when the menu opens the first time, then by the mini
-   player of the menu. The file playing is read into memory and looped. */
+   player of the menu. The file playing is read into memory and looped.
+   It plays in the menu before a game is loaded, and in the Load Game menu
+   (from the beginning) once one is: the in-game menu is silent. */
 #define MENU_MUSIC_FOLDER   DEFAULT_PATH "/music"
 
 /* the music folder of the device the emulator started from, then of the SD
@@ -80,7 +82,7 @@ static int music_current = -1;           /* the file of music_names chosen */
 static int music_read_index = -1;        /* the file in Bg_music_ogg */
 static int music_state = MUSIC_STOPPED;
 static int music_active = 0;             /* the OGG player plays Bg_music_ogg */
-static s32 music_resume = 0;             /* where to start again (ms) after a game ran */
+static int music_enabled = 1;            /* not the in-game menu */
 
 /* Frame Sync */
 u32 audioSync;
@@ -199,6 +201,10 @@ static int music_read(void)
 static void music_start(s32 at)
 {
   music_stop_player();
+  if (!music_enabled)
+  {
+    return; /* the in-game menu: the state is kept for the Load Game menu */
+  }
   if (Shutdown || !music_read())
   {
     music_state = MUSIC_STOPPED;
@@ -240,16 +246,37 @@ static void music_apply_setting(void)
   music_stop_player();
   music_scan();
   music_pick();
-  music_resume = 0;
   Bg_music_loaded = 1;
-  if (music_current >= 0)
+  if (music_current < 0)
+  {
+    music_state = MUSIC_STOPPED;
+  }
+  else if (music_enabled)
   {
     music_start(0);
   }
   else
   {
-    music_state = MUSIC_STOPPED;
+    music_state = MUSIC_PLAYING; /* once the Load Game menu opens */
   }
+}
+
+void gx_audio_MusicEnable(int on)
+{
+  music_enabled = on;
+  if (!on)
+  {
+    music_stop_player(); /* the state is kept */
+  }
+  else if ((music_state == MUSIC_PLAYING) && !music_active)
+  {
+    music_start(0); /* from the beginning */
+  }
+}
+
+int gx_audio_MusicEnabled(void)
+{
+  return music_enabled;
 }
 
 void gx_audio_MusicRestart(void)
@@ -274,7 +301,7 @@ void gx_audio_MusicPlay(void)
     {
       music_current = 0;
     }
-    music_start(music_resume); /* 0 unless paused while a game ran */
+    music_start(0);
   }
 }
 
@@ -285,8 +312,6 @@ void gx_audio_MusicPause(void)
     if (music_active)
     {
       PauseOgg(1);
-      s32 at = GetTimeOgg();
-      music_resume = (at > 0) ? at : 0;
     }
     music_state = MUSIC_PAUSED;
   }
@@ -295,7 +320,6 @@ void gx_audio_MusicPause(void)
 void gx_audio_MusicStop(void)
 {
   music_stop_player();
-  music_resume = 0;
   music_state = MUSIC_STOPPED;
 }
 
@@ -313,7 +337,6 @@ void gx_audio_MusicSkip(int dir)
   {
     music_current = (music_current + dir + music_count) % music_count;
   }
-  music_resume = 0;
   music_start(0);
 }
 
@@ -421,12 +444,7 @@ int gx_audio_Update(int status)
  ***/
 void gx_audio_Start(void)
 {
-  /* shutdown background music (its position is kept for the menu) */
-  if (music_active)
-  {
-    s32 at = GetTimeOgg();
-    music_resume = (at > 0) ? at : 0;
-  }
+  /* shutdown background music */
   PauseOgg(1);	
   StopOgg();	
   music_active = 0;
@@ -465,13 +483,15 @@ void gx_audio_Stop(void)
   ASND_Pause(0);
 	
   /* background music: the one of the setting the first time (once the
-     settings are loaded), then it goes on where it was if it was playing */
+     settings are loaded). It plays before a game is loaded only: the
+     in-game menu is silent (the Load Game menu plays it again). */
+  music_enabled = !system_hw;
   if (!Bg_music_loaded)
   {
     music_apply_setting();
   }
-  else if (music_state == MUSIC_PLAYING)
+  else if (music_enabled && (music_state == MUSIC_PLAYING))
   {
-    music_start(music_resume);
+    music_start(0);
   }
 }

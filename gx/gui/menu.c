@@ -3964,6 +3964,10 @@ static int loadgamemenu ()
 {
   int ret, filetype;
   gui_menu *m = &menu_load;
+
+  /* the menu music, silent in the menu of a game, plays here again */
+  gx_audio_MusicEnable(1);
+
   GUI_InitMenu(m);
   GUI_DrawMenuFX(m,30,0);
 
@@ -3977,6 +3981,7 @@ static int loadgamemenu ()
       case -1: 
         GUI_DrawMenuFX(m,30,1);
         GUI_DeleteMenu(m);
+        gx_audio_MusicEnable(!system_hw); /* back to the menu of the game */
         return 0;
 
       /*** Load from selected device */
@@ -4001,6 +4006,7 @@ static int loadgamemenu ()
           if (FileSelector(filetype) > 0)
           {
             /* directly jump to game */
+            gx_audio_MusicEnable(0);
             return 1;
           }
           GUI_InitMenu(m);
