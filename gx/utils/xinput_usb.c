@@ -67,6 +67,8 @@
 #define XI_REPORT_MIN        14     /* bytes up to the right stick */
 
 #define XI_TRIGGER_ON        0x80
+#define XI_TRIGGER_REST      0x08   /* up to this: released */
+#define XI_TRIGGER_FULL      0xF8   /* from this: fully pressed */
 #define XI_STICK_ON          16384
 
 #define XI_IF_CLASS          0xFF
@@ -115,6 +117,9 @@ typedef struct
 	volatile s32 read_result;
 	volatile u32 held;
 	volatile u32 reports;
+	volatile u8 stick_seen;      /* a stick was off its centre once */
+	volatile u8 trigger_full;    /* a trigger was fully pressed */
+	volatile u8 trigger_partial; /* a trigger was half pressed */
 	volatile u8 first_len;
 	u8 first_raw[20];
 } XiPad;
@@ -385,6 +390,28 @@ static u32 parse_report(const u8 *b)
 	return bits;
 }
 
+/* Remembers what the analog inputs of a pad look like: a pad without sticks
+   whose triggers only go from released to fully pressed uses them as buttons
+   (see XInput_TriggersAsButtons). */
+static void note_analog(XiPad *p, const u8 *b)
+{
+	for (int i = 4; i < 6; i++)
+	{
+		if (b[i] >= XI_TRIGGER_FULL)
+			p->trigger_full = 1;
+		else if (b[i] > XI_TRIGGER_REST)
+			p->trigger_partial = 1;
+	}
+	for (int i = 6; i < 14; i++)
+	{
+		if (b[i])
+		{
+			p->stick_seen = 1;
+			break;
+		}
+	}
+}
+
 static s32 read_cb(s32 result, void *usrdata)
 {
 	XiPad *p = pad_from_token(usrdata);
@@ -414,6 +441,7 @@ static s32 read_cb(s32 result, void *usrdata)
 	   state, attach notices) are 3 bytes long and are skipped. */
 	if (result >= XI_REPORT_MIN && b[0] == 0x00)
 	{
+		note_analog(p, b);
 		p->held = parse_report(b);
 		if (p->reports == 0)
 		{
@@ -1077,6 +1105,17 @@ u32 XInput_ButtonsHeld(int port)
 			bits |= p->held;
 	}
 	return bits;
+}
+
+bool XInput_TriggersAsButtons(int port)
+{
+	for (int i = 0; i < XI_MAX_PADS; i++)
+	{
+		XiPad *p = &pads[i];
+		if (p->active && !p->removed && p->port == port && p->reports > 0)
+			return !p->stick_seen && p->trigger_full && !p->trigger_partial;
+	}
+	return false;
 }
 
 u32 XInput_ConnectedMask(void)

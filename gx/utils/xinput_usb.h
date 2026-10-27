@@ -92,6 +92,13 @@ void XInput_Update(void);
 /* Buttons held on a port (0-3), XI_* bits. 0 when nothing is on that port. */
 u32 XInput_ButtonsHeld(int port);
 
+/* True when the controller on a port has no analog sticks and its triggers
+   have only gone from released to fully pressed: they are buttons. 6-button
+   pads do that, like the Retroflag Classic Controller-M, which sends its
+   shoulder buttons as LB (L) and LT (R), C as RT and Z as RB. False until a
+   trigger has been pressed. */
+bool XInput_TriggersAsButtons(int port);
+
 /* Bit n is set when a controller is working on port n. */
 u32 XInput_ConnectedMask(void);
 
