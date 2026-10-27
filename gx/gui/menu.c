@@ -748,6 +748,19 @@ static void menu_music_text(gui_item *item)
   }
 }
 
+/* The help line of Menu Music: how many files the folder has */
+static void menu_music_comment(gui_item *item, int count)
+{
+  if (!count)
+  {
+    sprintf (item->comment, "No .ogg file in /genplusultimate/music");
+  }
+  else
+  {
+    sprintf (item->comment, "%d song%s in /genplusultimate/music", count, (count > 1) ? "s" : "");
+  }
+}
+
 static void next_menu_music(char (*names)[BEZEL_NAME_MAX], int count)
 {
   int i = -1; /* RANDOM: the first file next */
@@ -828,6 +841,7 @@ static void prefmenu ()
   /* the OGG files in /genplusultimate/music */
   char (*music_names)[BEZEL_NAME_MAX] = malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
   int music_count = music_names ? gx_audio_MusicList(music_names, MAX_MENU_MUSIC) : 0;
+  menu_music_comment(&items[7], music_count);
 
   GUI_InitMenu(m);
   GUI_SlideMenuTitle(m,strlen("Menu "));
