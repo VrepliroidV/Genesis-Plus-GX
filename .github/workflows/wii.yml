@@ -49,6 +49,9 @@ jobs:
       run: |
         mkdir -p dist/apps/genplusultimate dist/genplusultimate/roms dist/genplusultimate/bezels
         touch dist/genplusultimate/roms/romsdir dist/genplusultimate/bezels/bezelsdir
+        # menu music: the OGG files of music/ in this repository
+        mkdir -p dist/genplusultimate/music
+        if ls music/*.ogg >/dev/null 2>&1; then cp music/*.ogg dist/genplusultimate/music/; else touch dist/genplusultimate/music/musicdir; fi
         cp genplus_wii.dol dist/apps/genplusultimate/boot.dol
         cp gx/hbc/meta.xml gx/hbc/icon.png LICENSE.txt dist/apps/genplusultimate/
 

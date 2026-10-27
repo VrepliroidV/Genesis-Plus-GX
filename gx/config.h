@@ -141,7 +141,14 @@ typedef struct
   uint8 m68k_auto_overclock;  /* 1: m68k_overclock only when the game slows down (core/autooc.c) */
   uint8 s68k_auto_overclock;  /* same for the Mega CD sub 68k and s68k_overclock */
   char bezel[128];  /* "" off, "<auto>" by the game's name, or a PNG in /genplusultimate/bezels (gx/utils/bezel.h) */
+  char menu_music[128];  /* MENU_MUSIC_OFF, MENU_MUSIC_RANDOM or an OGG file in /genplusultimate/music (gx_audio.c) */
 } t_config;
+
+/* Menu music (config.menu_music): none, one of the OGG files of the music
+   folder picked by chance at every start, or one file name ("<" is not
+   allowed in FAT file names) */
+#define MENU_MUSIC_OFF    ""
+#define MENU_MUSIC_RANDOM "<random>"
 
 extern t_config config;
 

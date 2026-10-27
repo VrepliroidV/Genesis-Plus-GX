@@ -75,6 +75,11 @@ int bezel_list(const char *dir, char (*names)[BEZEL_NAME_MAX], int count, int ma
    end when cut). out must have room for len + 1 characters. */
 void bezel_display_name(const char *name, char *out, int len);
 
+/* The same two for files ending in ext instead of ".png" (".ogg" for the
+   menu music). */
+int bezel_list_ext(const char *dir, const char *ext, char (*names)[BEZEL_NAME_MAX], int count, int max);
+void bezel_display_name_ext(const char *name, const char *ext, char *out, int len);
+
 #ifdef __cplusplus
 }
 #endif

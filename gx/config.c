@@ -56,6 +56,7 @@
 #define CONFIG_SIZE_BEFORE_AUTOCROP ((offsetof(t_config, autocrop) + 3) & ~3)
 #define CONFIG_SIZE_BEFORE_AUTOCROP_SCALE ((offsetof(t_config, autocrop_scale) + 3) & ~3)
 #define CONFIG_SIZE_BEFORE_BEZEL ((offsetof(t_config, bezel) + 3) & ~3)
+#define CONFIG_SIZE_BEFORE_MUSIC ((offsetof(t_config, menu_music) + 3) & ~3)
 
 t_config config;
 
@@ -71,7 +72,7 @@ static int config_load(void)
     fseek(fp, 0, SEEK_END);
     long size = ftell(fp);
     if ((size != sizeof(config)) && (size != CONFIG_SIZE_BEFORE_AUTOCROP) && (size != CONFIG_SIZE_BEFORE_AUTOCROP_SCALE) &&
-        (size != CONFIG_SIZE_BEFORE_BEZEL))
+        (size != CONFIG_SIZE_BEFORE_BEZEL) && (size != CONFIG_SIZE_BEFORE_MUSIC))
     {
       fclose(fp);
       return 0;
@@ -95,7 +96,7 @@ static int config_load(void)
     config.s68k_auto_overclock = 0;
     fread(&config, size, 1, fp);
     fclose(fp);
-    if (size < (long)sizeof(config))
+    if (size < (long)(offsetof(t_config, bezel) + sizeof(config.bezel)))
     {
       /* from before the bezels: the built-in one, as in a new config */
       memset(config.bezel, 0, sizeof(config.bezel));
@@ -105,6 +106,17 @@ static int config_load(void)
     if (strchr(config.bezel, '/') || strchr(config.bezel, '\\'))
     {
       config.bezel[0] = 0; /* a file name only */
+    }
+    if (size < (long)(offsetof(t_config, menu_music) + sizeof(config.menu_music)))
+    {
+      /* from before the menu music setting: as in a new config */
+      memset(config.menu_music, 0, sizeof(config.menu_music));
+      strcpy(config.menu_music, MENU_MUSIC_RANDOM);
+    }
+    config.menu_music[sizeof(config.menu_music) - 1] = 0;
+    if (strchr(config.menu_music, '/') || strchr(config.menu_music, '\\'))
+    {
+      config.menu_music[0] = 0; /* a file name only */
     }
     if ((size <= (long)offsetof(t_config, autocrop)) || (config.autocrop >= AUTOCROP_MODES))
     {
@@ -257,6 +269,8 @@ void config_default(void)
   strcpy(config.bezel, BEZEL_DEFAULT); /* the bezel built into the emulator */
 
   /* menu options */
+  memset(config.menu_music, 0, sizeof(config.menu_music));
+  strcpy(config.menu_music, MENU_MUSIC_RANDOM); /* one of the music folder */
   config.autoload     = 0;
   config.autocheat    = 0;
   config.s_auto       = 1;

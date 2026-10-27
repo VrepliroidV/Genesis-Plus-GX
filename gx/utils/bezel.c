@@ -447,11 +447,12 @@ static int name_cmp(const void *a, const void *b)
 	return strcasecmp((const char *) a, (const char *) b);
 }
 
-int bezel_list(const char *dir, char (*names)[BEZEL_NAME_MAX], int count, int max)
+int bezel_list_ext(const char *dir, const char *ext, char (*names)[BEZEL_NAME_MAX], int count, int max)
 {
 	DIR *d = opendir(dir);
 	struct dirent *e;
 	const int before = count;
+	const size_t ext_len = strlen(ext);
 
 	if (!d)
 		return count;
@@ -460,9 +461,9 @@ int bezel_list(const char *dir, char (*names)[BEZEL_NAME_MAX], int count, int ma
 	{
 		const size_t len = strlen(e->d_name);
 		int i, found = 0;
-		if (e->d_name[0] == '.' || len < 5 || len >= BEZEL_NAME_MAX)
+		if (e->d_name[0] == '.' || len <= ext_len || len >= BEZEL_NAME_MAX)
 			continue;
-		if (strcasecmp(e->d_name + len - 4, ".png") != 0)
+		if (strcasecmp(e->d_name + len - ext_len, ext) != 0)
 			continue;
 		for (i = 0; i < before && !found; i++)
 			found = (strcasecmp(names[i], e->d_name) == 0);
@@ -475,11 +476,17 @@ int bezel_list(const char *dir, char (*names)[BEZEL_NAME_MAX], int count, int ma
 	return count;
 }
 
-void bezel_display_name(const char *name, char *out, int len)
+int bezel_list(const char *dir, char (*names)[BEZEL_NAME_MAX], int count, int max)
+{
+	return bezel_list_ext(dir, ".png", names, count, max);
+}
+
+void bezel_display_name_ext(const char *name, const char *ext, char *out, int len)
 {
 	int n = (int) strlen(name);
-	if (n > 4 && strcasecmp(name + n - 4, ".png") == 0)
-		n -= 4;
+	const int ext_len = (int) strlen(ext);
+	if (n > ext_len && strcasecmp(name + n - ext_len, ext) == 0)
+		n -= ext_len;
 	if (n <= len)
 	{
 		memcpy(out, name, n);
@@ -488,4 +495,9 @@ void bezel_display_name(const char *name, char *out, int len)
 	}
 	memcpy(out, name, len - 3);
 	strcpy(out + len - 3, "...");
+}
+
+void bezel_display_name(const char *name, char *out, int len)
+{
+	bezel_display_name_ext(name, ".png", out, len);
 }

@@ -521,6 +521,12 @@ int main (int argc, char *argv[])
     dir = opendir(pathname);
     if (dir) closedir(dir);
     else mkdir(pathname,S_IRWXU);
+
+    /* menu music (Menu Settings > Menu Music) */
+    sprintf (pathname, "%s/music",DEFAULT_PATH);
+    dir = opendir(pathname);
+    if (dir) closedir(dir);
+    else mkdir(pathname,S_IRWXU);
   }
 
   /* initialize audio engine */

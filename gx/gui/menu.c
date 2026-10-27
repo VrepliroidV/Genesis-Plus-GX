@@ -455,6 +455,7 @@ static gui_item items_prefs[] =
   {NULL,NULL,"Saves Device: FAT",       "Configure default device for Save files",         56,132,276,48},
   {NULL,NULL,"SFX Volume: 100",         "Adjust sound effects volume",                     56,132,276,48},
   {NULL,NULL,"BGM Volume: 100",         "Adjust background music volume",                  56,132,276,48},
+  {NULL,NULL,"Menu Music: RANDOM",      "Music of the menu, from /genplusultimate/music",  56,132,276,48},
   {NULL,NULL,"BG Overlay: ON",          "Enable/Disable background overlay",               56,132,276,48},
   {NULL,NULL,"Screen Width: 658",       "Adjust menu screen width in pixels",              56,132,276,48},
   {NULL,NULL,"Show CD Leds: OFF",       "Enable/Disable CD leds display",                  56,132,276,48},
@@ -728,6 +729,51 @@ static void update_bgm(void)
   SetVolumeOgg(((int)config.bgm_volume * MAX_VOLUME) / 100);
 }
 
+/* Menu music: OFF, RANDOM, then each OGG file of /genplusultimate/music */
+static void menu_music_text(gui_item *item)
+{
+  char name[24];
+  if (!config.menu_music[0])
+  {
+    sprintf (item->text, "Menu Music: OFF");
+  }
+  else if (!strcmp(config.menu_music, MENU_MUSIC_RANDOM))
+  {
+    sprintf (item->text, "Menu Music: RANDOM");
+  }
+  else
+  {
+    bezel_display_name_ext(config.menu_music, ".ogg", name, 20);
+    sprintf (item->text, "Menu Music: %s", name);
+  }
+}
+
+static void next_menu_music(char (*names)[BEZEL_NAME_MAX], int count)
+{
+  int i = -1; /* RANDOM: the first file next */
+  if (!config.menu_music[0])
+  {
+    strcpy(config.menu_music, MENU_MUSIC_RANDOM);
+    return;
+  }
+  if (strcmp(config.menu_music, MENU_MUSIC_RANDOM))
+  {
+    for (i = 0; (i < count) && strcasecmp(names[i], config.menu_music); i++);
+    if (i == count)
+    {
+      i = count - 1; /* not there any more: OFF next */
+    }
+  }
+  if (i + 1 < count)
+  {
+    snprintf(config.menu_music, sizeof(config.menu_music), "%s", names[i + 1]);
+  }
+  else
+  {
+    config.menu_music[0] = 0;
+  }
+}
+
 static void prefmenu ()
 {
   int ret, quit = 0;
@@ -753,30 +799,35 @@ static void prefmenu ()
   else sprintf (items[4].text, "Saves Device: FAT");
   sprintf (items[5].text, "SFX Volume: %1.1f", config.sfx_volume);
   sprintf (items[6].text, "BGM Volume: %1.1f", config.bgm_volume);
-  sprintf (items[7].text, "BG Overlay: %s", config.bg_overlay ? "ON":"OFF");
-  sprintf (items[8].text, "Screen Width: %d", config.screen_w);
-  sprintf (items[9].text, "Show CD Leds: %s", config.cd_leds ? "ON":"OFF");
-  sprintf (items[10].text, "Show FPS: %s", config.fps ? "ON":"OFF");
+  menu_music_text(&items[7]);
+  sprintf (items[8].text, "BG Overlay: %s", config.bg_overlay ? "ON":"OFF");
+  sprintf (items[9].text, "Screen Width: %d", config.screen_w);
+  sprintf (items[10].text, "Show CD Leds: %s", config.cd_leds ? "ON":"OFF");
+  sprintf (items[11].text, "Show FPS: %s", config.fps ? "ON":"OFF");
   if (analog_sensitivity == 128)
   {
-    sprintf (items[11].text, "Analog Sensitivity: MAX");
+    sprintf (items[12].text, "Analog Sensitivity: MAX");
   }
   else if (analog_sensitivity == 0)
   {
-    sprintf (items[11].text, "Analog Sensitivity: OFF");
+    sprintf (items[12].text, "Analog Sensitivity: OFF");
   }
   else
   {
-    sprintf (items[11].text, "Analog Sensitivity: %d", analog_sensitivity);
+    sprintf (items[12].text, "Analog Sensitivity: %d", analog_sensitivity);
   }
 #ifdef HW_RVL
-  sprintf (items[12].text, "Wiimote Timeout: %s", config.autosleep ? "5 MIN":"30 MIN");
-  sprintf (items[13].text, "Wiimote Calibration: %s", ((config.calx * config.caly) != 0) ? "MANUAL":"AUTO");
-  sprintf (items[13].comment, "%s", ((config.calx * config.caly) != 0) ? "Reset default Wii remote pointer calibration":"Calibrate Wii remote pointer");
-  m->max_items = 14;
+  sprintf (items[13].text, "Wiimote Timeout: %s", config.autosleep ? "5 MIN":"30 MIN");
+  sprintf (items[14].text, "Wiimote Calibration: %s", ((config.calx * config.caly) != 0) ? "MANUAL":"AUTO");
+  sprintf (items[14].comment, "%s", ((config.calx * config.caly) != 0) ? "Reset default Wii remote pointer calibration":"Calibrate Wii remote pointer");
+  m->max_items = 15;
 #else
-  m->max_items = 12;
+  m->max_items = 13;
 #endif
+
+  /* the OGG files in /genplusultimate/music */
+  char (*music_names)[BEZEL_NAME_MAX] = malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
+  int music_count = music_names ? gx_audio_MusicList(music_names, MAX_MENU_MUSIC) : 0;
 
   GUI_InitMenu(m);
   GUI_SlideMenuTitle(m,strlen("Menu "));
@@ -834,7 +885,13 @@ static void prefmenu ()
         sprintf (items[6].text, "BGM Volume: %1.1f", config.bgm_volume);
         break;
 
-      case 7:   /*** Background overlay ***/
+      case 7:   /*** Menu music ***/
+        next_menu_music(music_names, music_count);
+        menu_music_text(&items[7]);
+        gx_audio_MusicRestart();
+        break;
+
+      case 8:   /*** Background overlay ***/
         config.bg_overlay ^= 1;
         if (config.bg_overlay)
         {
@@ -843,7 +900,7 @@ static void prefmenu ()
           bg_ctrls[1].state |= IMAGE_VISIBLE;
           bg_list[1].state  |= IMAGE_VISIBLE;
           bg_saves[2].state |= IMAGE_VISIBLE;
-          sprintf (items[7].text, "BG Overlay: ON");
+          sprintf (items[8].text, "BG Overlay: ON");
         }
         else
         {
@@ -852,56 +909,56 @@ static void prefmenu ()
           bg_ctrls[1].state &= ~IMAGE_VISIBLE;
           bg_list[1].state  &= ~IMAGE_VISIBLE;
           bg_saves[2].state &= ~IMAGE_VISIBLE;
-          sprintf (items[7].text, "BG Overlay: OFF");
+          sprintf (items[8].text, "BG Overlay: OFF");
         }
         break;
 
-      case 8:   /*** Screen Width ***/
+      case 9:   /*** Screen Width ***/
         GUI_OptionBox(m,update_screen_w,"Screen Width",(void *)&config.screen_w,2,640,VI_MAX_WIDTH_NTSC,1);
-        sprintf (items[8].text, "Screen Width: %d", config.screen_w);
+        sprintf (items[9].text, "Screen Width: %d", config.screen_w);
         break;
 
-      case 9:   /*** CD LEDS ***/
+      case 10:   /*** CD LEDS ***/
         config.cd_leds ^= 1;
-        sprintf (items[9].text, "Show CD Leds: %s", config.cd_leds ? "ON":"OFF");
+        sprintf (items[10].text, "Show CD Leds: %s", config.cd_leds ? "ON":"OFF");
         break;
 
-      case 10:   /*** FPS counter ***/
+      case 11:   /*** FPS counter ***/
         config.fps ^= 1;
-        sprintf (items[10].text, "Show FPS: %s", config.fps ? "ON":"OFF");
+        sprintf (items[11].text, "Show FPS: %s", config.fps ? "ON":"OFF");
         break;
 
-      case 11:   /*** Analog sticks sensitivity ***/
+      case 12:   /*** Analog sticks sensitivity ***/
         GUI_OptionBox(m,0,"Analog Sensitivy",(void *)&analog_sensitivity,1,0,128,1);
         if (analog_sensitivity == 128)
         {
-          sprintf (items[11].text, "Analog Sensitivity: MAX");
+          sprintf (items[12].text, "Analog Sensitivity: MAX");
         }
         else if (analog_sensitivity == 0)
         {
-          sprintf (items[11].text, "Analog Sensitivity: OFF");
+          sprintf (items[12].text, "Analog Sensitivity: OFF");
         }
         else
         {
-          sprintf (items[11].text, "Analog Sensitivity: %d", analog_sensitivity);
+          sprintf (items[12].text, "Analog Sensitivity: %d", analog_sensitivity);
         }
         config.analog_sensitivity = 128 - analog_sensitivity;
         break;
 
 #ifdef HW_RVL
-      case 12:   /*** Wii remote auto switch-off ***/
+      case 13:   /*** Wii remote auto switch-off ***/
         config.autosleep ^= 1;
-        sprintf (items[12].text, "Wiimote Timeout: %s", config.autosleep ? "5min":"30min");
+        sprintf (items[13].text, "Wiimote Timeout: %s", config.autosleep ? "5min":"30min");
         WPAD_SetIdleTimeout(config.autosleep ? 300 : 1800);
         break;
 
-      case 13:   /*** Wii remote pointer calibration ***/
+      case 14:   /*** Wii remote pointer calibration ***/
         if ((config.calx * config.caly) == 0)
         {
           if (GUI_WaitConfirm("Pointer Calibration","Aim center of TV screen"))
           {
-            sprintf (items[13].text, "Wiimote Calibration: MANUAL");
-            sprintf (items[13].comment, "Reset default Wii remote pointer calibration");
+            sprintf (items[14].text, "Wiimote Calibration: MANUAL");
+            sprintf (items[14].comment, "Reset default Wii remote pointer calibration");
             config.calx = 320 - m_input.ir.x;
             config.caly = 240 - m_input.ir.y;
             m_input.ir.x = 320;
@@ -910,8 +967,8 @@ static void prefmenu ()
         }
         else
         {
-          sprintf (items[13].text, "Wiimote Calibration: AUTO");
-          sprintf (items[13].comment, "Calibrate Wii remote pointer");
+          sprintf (items[14].text, "Wiimote Calibration: AUTO");
+          sprintf (items[14].comment, "Calibrate Wii remote pointer");
           config.calx = config.caly = 0;
         }
         break;
@@ -922,6 +979,8 @@ static void prefmenu ()
         break;
     }
   }
+
+  free(music_names);
 
   /* stop DVD drive when not in use */
   if (config.l_device != TYPE_DVD)

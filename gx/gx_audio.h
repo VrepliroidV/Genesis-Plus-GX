@@ -48,4 +48,9 @@ extern void gx_audio_Start(void);
 extern void gx_audio_Stop(void);
 extern int gx_audio_Update(int status);
 
+/* Menu music (config.menu_music): the OGG files of /genplusultimate/music */
+#define MAX_MENU_MUSIC 512
+extern int gx_audio_MusicList(char (*names)[128], int max); /* names of BEZEL_NAME_MAX */
+extern void gx_audio_MusicRestart(void); /* loads the one of the setting and plays it */
+
 #endif

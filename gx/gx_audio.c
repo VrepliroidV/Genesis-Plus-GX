@@ -38,6 +38,8 @@
  ****************************************************************************************/
 
 #include "shared.h"
+#include "bezel.h"
+#include <ogc/lwp_watchdog.h>
 
 /* Length is dimensionned for at least one frame of emulation */
 #define SOUND_BUFFER_LEN 4096
@@ -52,9 +54,13 @@ static u8 soundbuffer[SOUND_BUFFER_NUM][SOUND_BUFFER_LEN] ATTRIBUTE_ALIGN(32);
 static int bufferIndex;
 static int bufferSize;
 
-/* Background music */
+/* Background music: an OGG file of the music folder (config.menu_music),
+   read when the menu opens the first time */
+#define MENU_MUSIC_FOLDER   DEFAULT_PATH "/music"
+#define MENU_MUSIC_MAX_SIZE (8 * 1024 * 1024)
 static u8 *Bg_music_ogg = NULL;
 static u32 Bg_music_ogg_size = 0;
+static int Bg_music_loaded = 0;
 
 /* Frame Sync */
 u32 audioSync;
@@ -77,23 +83,103 @@ void gx_audio_Init(void)
   /* AUDIO & DSP hardware are initialized */
   /* Default samplerate is set to 48kHz */
   ASND_Init();
+}
 
-  /* Load background music from FAT device */
-  char fname[MAXPATHLEN];
-  sprintf(fname,"%s/Bg_music.ogg",DEFAULT_PATH);
-  FILE *f = fopen(fname,"rb");
-  if (f)
+/***************************************************************************************/
+/*   Menu music                                                                        */
+/***************************************************************************************/
+
+int gx_audio_MusicList(char (*names)[BEZEL_NAME_MAX], int max)
+{
+  return bezel_list_ext(MENU_MUSIC_FOLDER, ".ogg", names, 0, max);
+}
+
+static void music_free(void)
+{
+  if (Bg_music_ogg)
   {
-    struct stat filestat;
-    stat(fname, &filestat);
-    Bg_music_ogg_size = filestat.st_size;
-    Bg_music_ogg = memalign(32,Bg_music_ogg_size);
+    /* the player reads the buffer */
+    PauseOgg(1);
+    StopOgg();
+    free(Bg_music_ogg);
+    Bg_music_ogg = NULL;
+    Bg_music_ogg_size = 0;
+  }
+}
+
+/* Reads the music of the setting (one by chance for MENU_MUSIC_RANDOM) */
+static void music_load(void)
+{
+  char name[BEZEL_NAME_MAX];
+  char fname[MAXPATHLEN];
+
+  music_free();
+  Bg_music_loaded = 1;
+  if (!config.menu_music[0])
+  {
+    return;
+  }
+  if (!strcmp(config.menu_music, MENU_MUSIC_RANDOM))
+  {
+    char (*names)[BEZEL_NAME_MAX] = malloc(MAX_MENU_MUSIC * BEZEL_NAME_MAX);
+    int count = names ? gx_audio_MusicList(names, MAX_MENU_MUSIC) : 0;
+    if (count > 0)
+    {
+      snprintf(name, sizeof(name), "%s", names[(u32)(gettime() % count)]);
+    }
+    free(names);
+    if (count == 0)
+    {
+      return;
+    }
+  }
+  else
+  {
+    snprintf(name, sizeof(name), "%s", config.menu_music);
+  }
+
+  snprintf(fname, sizeof(fname), "%s/%s", MENU_MUSIC_FOLDER, name);
+  FILE *f = fopen(fname, "rb");
+  if (!f)
+  {
+    return;
+  }
+  fseek(f, 0, SEEK_END);
+  long size = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if ((size > 0) && (size <= MENU_MUSIC_MAX_SIZE))
+  {
+    Bg_music_ogg = memalign(32, size);
     if (Bg_music_ogg)
     {
-      fread(Bg_music_ogg,1,Bg_music_ogg_size,f);
+      if (fread(Bg_music_ogg, 1, size, f) == (size_t)size)
+      {
+        Bg_music_ogg_size = size;
+      }
+      else
+      {
+        free(Bg_music_ogg);
+        Bg_music_ogg = NULL;
+      }
     }
-    fclose(f);
   }
+  fclose(f);
+}
+
+static void music_play(void)
+{
+  if (Bg_music_ogg && !Shutdown)
+  {
+    PauseOgg(0);
+    PlayOgg((char *)Bg_music_ogg, Bg_music_ogg_size, 0, OGG_INFINITE_TIME);
+    SetVolumeOgg(((int)config.bgm_volume * MAX_VOLUME) / 100);
+  }
+}
+
+void gx_audio_MusicRestart(void)
+{
+  music_load();
+  music_play();
 }
 
 /* AUDIO engine shutdown */
@@ -213,11 +299,10 @@ void gx_audio_Stop(void)
   ASND_Init();
   ASND_Pause(0);
 	
-  /* play background music */
-  if (Bg_music_ogg && !Shutdown)
+  /* play background music (read the first time, once the settings are loaded) */
+  if (!Bg_music_loaded)
   {
-    PauseOgg(0);	
-    PlayOgg((char *)Bg_music_ogg, Bg_music_ogg_size, 0, OGG_INFINITE_TIME);	
-    SetVolumeOgg(((int)config.bgm_volume * MAX_VOLUME) / 100);	
+    music_load();
   }
+  music_play();
 }
